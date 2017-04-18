@@ -1,5 +1,5 @@
 <resources>
     <dimen name="fab_margin">16dp</dimen>
     <dimen name="die_size">100dp</dimen>
-    <dimen name="die_layout_margin">20dp</dimen>
+    <dimen name="die_layout_margin">10dp</dimen>
 </resources>

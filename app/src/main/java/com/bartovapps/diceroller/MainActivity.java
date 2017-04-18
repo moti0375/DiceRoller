@@ -3,9 +3,6 @@ package com.bartovapps.diceroller;
 import android.animation.Animator;
 import android.animation.ValueAnimator;
 import android.databinding.ObservableInt;
-import android.media.AudioAttributes;
-import android.media.Image;
-import android.media.SoundPool;
 import android.os.Build;
 import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
@@ -14,13 +11,14 @@ import android.support.transition.Transition;
 import android.support.transition.TransitionManager;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
+import android.util.DisplayMetrics;
 import android.util.Log;
-import android.view.View;
+import android.util.TypedValue;
 import android.view.ViewGroup;
 import android.view.animation.LinearInterpolator;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
-import android.widget.Toast;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.load.engine.DiskCacheStrategy;
@@ -30,18 +28,13 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Random;
-import java.util.Set;
 import java.util.stream.Collectors;
 
 import rx.Observable;
-import rx.Observer;
-import rx.Subscriber;
 import rx.Subscription;
 import rx.observables.ConnectableObservable;
 import utils.AudioHelper;
-
-import static android.R.attr.author;
-import static android.R.attr.x;
+import utils.Utils;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -73,11 +66,24 @@ public class MainActivity extends AppCompatActivity {
     ObservableInt scoreObservable;
 
     AudioHelper audioHelper;
+    int mScreenWidthPx;
+    int mScreenWidthDp;
+
+    float mMargin;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+
+        DisplayMetrics displayMetrics = new DisplayMetrics();
+        getWindowManager().getDefaultDisplay().getMetrics(displayMetrics);
+        mScreenWidthPx = displayMetrics.widthPixels;
+        mScreenWidthDp = Utils.pixelToDp(mScreenWidthPx, this);
+
+        Log.i(TAG, "Screen Width: " + mScreenWidthPx + "px");
+        Log.i(TAG, "Screen Width: " + mScreenWidthDp + "dp");
+
         Toolbar toolbar = (Toolbar) findViewById(R.id.toolbar);
         setSupportActionBar(toolbar);
         random = new Random();
@@ -100,19 +106,6 @@ public class MainActivity extends AppCompatActivity {
 
         mDiceObservable = getObservable(mDiceScores);
         mScoreObservable = Observable.just(mScore);
-
-        ConnectableObservable<Integer> scoreListener = mScoreObservable.publish();
-
-        mSubscription = scoreListener.subscribe((n) -> {
-                    Log.i(TAG, "onNext: " + n);
-                }, (e) -> {
-                    Log.i(TAG, "onError: " + e.getMessage());
-                }, () -> {
-                    Log.i(TAG, "onComplete: ");
-                }
-        );
-        scoreListener.connect();
-
     }
 
 
@@ -179,6 +172,7 @@ public class MainActivity extends AppCompatActivity {
             rollDice();
         });
 
+
         ivDie1 = (ImageView) findViewById(R.id.die1Image);
         loadImageToView(ivDie1, "die_1.png");
         ivDie2 = (ImageView) findViewById(R.id.die2Image);
@@ -189,6 +183,23 @@ public class MainActivity extends AppCompatActivity {
         imageViewList.add(ivDie1);
         imageViewList.add(ivDie2);
         imageViewList.add(ivDie3);
+
+        mMargin = getResources().getDimension(R.dimen.die_layout_margin);
+        Log.i(TAG, "setViews margin: " + mMargin + "dp");
+        int marginPx = (int) TypedValue.applyDimension(TypedValue.COMPLEX_UNIT_PX, mMargin, getResources().getDisplayMetrics());
+        Log.i(TAG, "setViews, marginPx: " + marginPx);
+        float totalMargin = 2*(marginPx * (imageViewList.size()+1));
+        Log.i(TAG, "setViews, totalMargin: " + totalMargin);
+
+        float dieSizePx = (mScreenWidthPx - totalMargin)/3;
+        Log.i(TAG, "setViews, dieSizePx: " + dieSizePx);
+
+        for(ImageView iv: imageViewList){
+
+            iv.getLayoutParams().height = (int)dieSizePx;
+            iv.getLayoutParams().width = (int)dieSizePx;
+
+        }
 
         tvScore = (TextView) findViewById(R.id.tvScore);
 
@@ -251,8 +262,7 @@ public class MainActivity extends AppCompatActivity {
 
 
     Observable<List<Integer>> getObservable(List<Integer> list) {
-        Observable<List<Integer>> observable = Observable.just(list);
-        return observable;
+        return Observable.just(list);
     }
 
 }
